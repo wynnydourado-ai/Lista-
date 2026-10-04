@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lista de compras</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef6ee;--card:#fff;--ink:#17301f;--mute:#7a8f80;--green:#1f8a4c;--green2:#d7efdf;--red:#e4572e;--line:#dbe8dd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a13;--card:#18271d;--ink:#e6f2e9;--mute:#8aa393;--green:#3fc277;--green2:#1f3a29;--line:#26392c}}
+:root[data-theme="dark"]{--bg:#0f1a13;--card:#18271d;--ink:#e6f2e9;--mute:#8aa393;--green:#3fc277;--green2:#1f3a29;--line:#26392c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 17px/1.35 Nunito,system-ui,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+header{background:var(--green);color:#fff;border-radius:24px;padding:20px;margin-bottom:14px}
+h1{font:600 28px Fredoka,sans-serif;margin:0}
+.count{margin:2px 0 14px;opacity:.92;font-weight:700}
+.bar{height:14px;background:rgba(255,255,255,.28);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:#fff;border-radius:99px;transition:width .35s}
+.pct{margin-top:6px;font-weight:700;text-align:right;font-size:15px}
+.tools{display:flex;gap:8px;margin-bottom:14px}
+.search{flex:1;position:relative}
+.search span{position:absolute;left:14px;top:50%;transform:translateY(-50%)}
+input[type=search],input[type=text]{width:100%;height:52px;border:2px solid var(--line);border-radius:16px;background:var(--card);color:var(--ink);font:inherit;padding:0 14px}
+input[type=search]{padding-left:44px}
+input:focus{outline:3px solid var(--green2);border-color:var(--green)}
+.btn{min-height:52px;border:0;border-radius:16px;font:700 16px Nunito,sans-serif;padding:0 16px;cursor:pointer;background:var(--green);color:#fff}
+.btn.ghost{background:var(--card);color:var(--ink);border:2px solid var(--line)}
+.btn.danger{background:var(--red)}
+.btn:active{transform:scale(.97)}
+.add{display:none;gap:8px;margin-bottom:14px}.add.open{display:flex}
+h2{font:600 20px Fredoka,sans-serif;margin:22px 4px 10px}
+ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li{display:flex;align-items:center;background:var(--card);border-radius:18px;border:2px solid var(--line);transition:.2s}
+li label{flex:1;display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 14px;cursor:pointer}
+li input{position:absolute;opacity:0;pointer-events:none}
+.box{flex:none;width:30px;height:30px;border-radius:9px;border:3px solid var(--green);display:grid;place-items:center;color:#fff;font-size:18px;font-weight:800;transition:.15s}
+input:focus-visible+.box{outline:3px solid var(--green2);outline-offset:2px}
+.ico{font-size:24px;flex:none}
+.name{flex:1;transition:.2s}
+li.done{background:transparent;border-style:dashed}
+li.done .box{background:var(--green)}
+li.done .name{text-decoration:line-through;color:var(--mute)}
+li.done .ico{opacity:.45}
+.tag{font-size:12px;font-weight:700;color:var(--green);background:var(--green2);border-radius:99px;padding:3px 9px;flex:none}
+.del{border:0;background:none;color:var(--mute);font-size:22px;width:48px;height:60px;cursor:pointer}
+.empty{color:var(--mute);text-align:center;padding:18px;border:2px dashed var(--line);border-radius:18px}
+.reset{margin-top:12px;width:100%}
+.wa{display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:26px;width:100%;background:#25a244}
+dialog{border:0;border-radius:22px;padding:22px;max-width:340px;background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog p{font-size:18px;font-weight:700;margin:0 0 18px}
+dialog .row{display:flex;gap:8px}dialog .btn{flex:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🛒 Lista de compras</h1>
+    <div class="count" id="count"></div>
+    <div class="bar"><i id="fill"></i></div>
+    <div class="pct" id="pct"></div>
+  </header>
+
+  <div class="tools">
+    <div class="search"><span>🔎</span><input type="search" id="q" placeholder="Pesquisar produto" aria-label="Pesquisar produto"></div>
+    <button class="btn" id="toggleAdd">+ Adicionar</button>
+  </div>
+  <div class="add" id="addBox">
+    <input type="text" id="newName" placeholder="Nome do produto" aria-label="Novo produto">
+    <button class="btn" id="saveAdd">Salvar</button>
+  </div>
+
+  <h2>🛒 Para comprar <span id="nTodo"></span></h2>
+  <ul id="todo"></ul>
+  <h2>✅ Já coloquei no carrinho <span id="nDone"></span></h2>
+  <ul id="done"></ul>
+
+  <a class="btn wa" id="wa" target="_blank" rel="noopener">📲 Enviar no WhatsApp</a>
+  <button class="btn ghost" id="cp" style="width:100%;margin-top:10px">📋 Copiar lista</button>
+  <textarea id="tx" readonly hidden rows="8" style="width:100%;margin-top:10px;border:2px solid var(--line);border-radius:14px;padding:12px;font:inherit;background:var(--card);color:var(--ink)"></textarea>
+  <button class="btn ghost reset" id="reset">↺ Desmarcar tudo</button>
+</div>
+
+<dialog id="dlg">
+  <p>Tem certeza que deseja desmarcar todos os produtos?</p>
+  <div class="row"><button class="btn ghost" id="no">Cancelar</button><button class="btn danger" id="yes">Desmarcar</button></div>
+</dialog>
+
+<script>
+const BASE=["Páprica defumada","Páprica doce","Tempero do Edu","Tempero para feijão","Papel higiênico","Cebola","Batata","Cenoura","Banana-da-terra","Banana","Alface","Alguma fruta para fazer suco","Molho de tomate","Carne para cozido","Café","Açúcar","Pão de forma sem casca","Leite de caixinha","Leite em pó — pode ser Piracanjuba","Leite condensado","Creme de leite","Cheiro-verde","Alho","Mamão — se achar um bom","Carne moída","Pão de hambúrguer","Bacon","Requeijão cremoso","Margarina — Qualy","Pão de sal"];
+const ICONS=[["páprica","🌶️"],["tempero","🧂"],["papel","🧻"],["cebola","🧅"],["batata","🥔"],["cenoura","🥕"],["banana","🍌"],["alface","🥬"],["fruta","🍊"],["tomate","🍅"],["carne","🥩"],["café","☕"],["açúcar","🍬"],["pão","🍞"],["leite","🥛"],["creme","🥛"],["cheiro","🌿"],["alho","🧄"],["mamão","🥭"],["bacon","🥓"],["requeijão","🧀"],["queijo","🧀"],["margarina","🧈"],["ovo","🥚"],["arroz","🍚"],["água","💧"],["frango","🍗"],["maçã","🍎"],["limão","🍋"]];
+const iconFor=n=>{n=n.toLowerCase();for(const[k,v]of ICONS)if(n.includes(k))return v;return"🛍️"};
+const KEY="lista-compras-v1";
+let items=BASE.map((n,i)=>({id:i+1,name:n,done:false,custom:false}));
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(Array.isArray(s)&&s.length)items=s}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(items))}catch(e){}};
+const $=id=>document.getElementById(id);
+function row(it){
+  const li=document.createElement("li");if(it.done)li.className="done";
+  const lb=document.createElement("label");
+  const cb=document.createElement("input");cb.type="checkbox";cb.checked=it.done;
+  cb.onchange=()=>{it.done=cb.checked;save();render()};
+  const box=document.createElement("span");box.className="box";box.textContent=it.done?"✓":"";
+  const ic=document.createElement("span");ic.className="ico";ic.textContent=iconFor(it.name);
+  const nm=document.createElement("span");nm.className="name";nm.textContent=it.name;
+  lb.append(cb,box,ic,nm);
+  if(it.done){const t=document.createElement("span");t.className="tag";t.textContent="comprado";lb.append(t)}
+  li.append(lb);
+  if(it.custom){const d=document.createElement("button");d.className="del";d.textContent="×";d.setAttribute("aria-label","Remover "+it.name);d.onclick=()=>{items=items.filter(x=>x.id!==it.id);save();render()};li.append(d)}
+  return li;
+}
+function render(){
+  const q=$("q").value.trim().toLowerCase();
+  const total=items.length,got=items.filter(i=>i.done).length,p=total?Math.round(got/total*100):0;
+  $("count").textContent=`${got} de ${total} itens comprados · faltam ${total-got}`;
+  $("fill").style.width=p+"%";$("pct").textContent=p+"%";
+  for(const[id,flag]of[["todo",false],["done",true]]){
+    const ul=$(id);ul.replaceChildren();
+    const list=items.filter(i=>i.done===flag&&i.name.toLowerCase().includes(q));
+    list.forEach(i=>ul.append(row(i)));
+    if(!list.length){const e=document.createElement("li");e.className="empty";e.style.display="block";
+      e.textContent=q?"Nenhum produto encontrado.":flag?"Nada no carrinho ainda.":"Tudo no carrinho. 🎉";ul.append(e)}
+    $(flag?"nDone":"nTodo").textContent="("+items.filter(i=>i.done===flag).length+")";
+  }
+}
+const _render=render;render=function(){_render();updWa()};
+$("q").oninput=render;
+$("toggleAdd").onclick=()=>{$("addBox").classList.toggle("open");if($("addBox").classList.contains("open"))$("newName").focus()};
+function add(){
+  const v=$("newName").value.trim();if(!v)return;
+  items.push({id:Date.now(),name:v,done:false,custom:true});
+  $("newName").value="";$("q").value="";save();render();
+}
+$("saveAdd").onclick=add;
+$("newName").onkeydown=e=>{if(e.key==="Enter")add()};
+$("reset").onclick=()=>$("dlg").showModal();
+$("no").onclick=()=>$("dlg").close();
+$("yes").onclick=()=>{items.forEach(i=>i.done=false);save();render();$("dlg").close()};
+function msg(){
+  const t=items.filter(i=>!i.done),d=items.filter(i=>i.done);
+  let m="🛒 *Lista de compras*\n"+d.length+" de "+items.length+" itens comprados\n";
+  if(t.length)m+="\n*Para comprar:*\n"+t.map(i=>"☐ "+i.name).join("\n")+"\n";
+  if(d.length)m+="\n*Já no carrinho:*\n"+d.map(i=>"✅ "+i.name).join("\n")+"\n";
+  return m;
+}
+function updWa(){$("wa").href="https://wa.me/?text="+encodeURIComponent(msg())}
+$("cp").onclick=async()=>{
+  const m=msg(),tx=$("tx");tx.value=m;tx.hidden=false;tx.focus();tx.select();
+  let ok=false;
+  try{await navigator.clipboard.writeText(m);ok=true}catch(e){try{ok=document.execCommand("copy")}catch(e2){}}
+  $("cp").textContent=ok?"✅ Copiado! Cole no WhatsApp":"Selecione o texto abaixo e copie";
+  setTimeout(()=>{$("cp").textContent="📋 Copiar lista"},3500);
+};
+render();
+</script>
+</body>
+</html>
